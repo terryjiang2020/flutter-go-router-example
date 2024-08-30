@@ -1,9 +1,15 @@
+import 'package:androidrouting/global_key.dart';
+import 'package:androidrouting/visual_exact_button.dart';
 import 'package:flutter/material.dart';
+import 'package:screenshot/screenshot.dart';
 import 'app/routes/app_routes.dart';
 
 void main() {
   runApp(const MyApp());
 }
+
+final ScreenshotController screenshotController = ScreenshotController();
+bool loading = false;
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -20,6 +26,45 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.black
       ),
+      // VM Setup
+      builder: (context, child) {
+        // When you wish to disable the floating button, you can return the child directly.
+        // if (true) {
+        //   return child!;
+        // }
+        return Scaffold(
+          body: 
+          Stack(
+            children: [
+              Screenshot(
+                controller: screenshotController,
+                child: child,
+              ),
+              Visibility(
+                visible: loading,
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              )
+            ],
+          ),
+          floatingActionButton: VisualExactButton(
+            setLoading: (bool value) {
+              loading = value;
+            },
+            currentContext: context,
+            navigatorKey: navigatorKey,
+            screenshotController: screenshotController,
+            // apiToken: '67fd3d00-2439-11ef-bef2-dbb7af0bf2601717701444816',
+            child: child,
+          ),
+          // The following decides the location of the floating button. Feel free to change it.
+          floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
+        );
+      },
     );
   }
 }

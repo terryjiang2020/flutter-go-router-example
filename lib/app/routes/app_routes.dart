@@ -1,4 +1,5 @@
 import 'package:androidrouting/controller/navigation_cubit.dart';
+import 'package:androidrouting/global_key.dart';
 import 'package:androidrouting/presentation/home/home_details_screen.dart';
 import 'package:androidrouting/presentation/home/home_screen.dart';
 import 'package:androidrouting/presentation/main_screen.dart';
@@ -11,15 +12,15 @@ import 'package:go_router/go_router.dart';
 import '../../core/utils/constants.dart';
 import 'screens/not_found_page.dart';
 
-class AppRouter {
+// final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
-  static final _rootNavigatorKey = GlobalKey<NavigatorState>();
-  static final _shellNavigatorKey = GlobalKey<NavigatorState>();
+class AppRouter {
 
   static final GoRouter _router = GoRouter(
     initialLocation: Routes.homeNamedPage,
     debugLogDiagnostics: true,
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: navigatorKey,
     routes: [
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
