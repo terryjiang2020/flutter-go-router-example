@@ -64,6 +64,25 @@ class AppRouter {
               child: SettingScreen(),
             ),
           ),
+          // This solution doesn't make sense. It is just using a dialog as a page.
+          // GoRoute(
+          //   path: Routes.settingsNamedPage,
+          //   builder: (context, state) => const ProfileScreen(),
+          //   pageBuilder: (context, state) {
+          //     return CustomTransitionPage<vorid>(
+          //       key: state.pageKey,
+          //       child: const ProfileScreen(), // Current page
+          //       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          //         return Stack(
+          //           children: [
+          //             child,
+          //             AlertDialogWidget(), // Dialog on top of the current page
+          //           ],
+          //         );
+          //       },
+          //     );
+          //   },
+          // ),
         ],
       ),
     ],
@@ -72,4 +91,25 @@ class AppRouter {
   );
 
   static GoRouter get router => _router;
+}
+
+class AlertDialogWidget extends StatelessWidget {
+  const AlertDialogWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Dialog'),
+      content: const Text('This is a dialog'),
+      actions: [
+        TextButton(
+          onPressed: () {
+            // Close the dialog and navigate back to the previous route
+            context.pop();
+          },
+          child: const Text('Close'),
+        ),
+      ],
+    );
+  }
 }

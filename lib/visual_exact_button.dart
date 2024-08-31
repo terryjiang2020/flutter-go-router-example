@@ -16,6 +16,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:androidrouting/global_key.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -561,6 +562,7 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
   List<CampaignProjectModel> items = [];
   bool dialogOpened = false;
   late GoRouter _goRouter;
+
   CampaignProjectModel defaultCampaign = CampaignProjectModel(id: 0, name: 'Select a Campaign');
   CampaignProjectModel defaultProject = CampaignProjectModel(id: 0, name: 'Select a Project');
   CampaignProjectModel selectedCampaign = CampaignProjectModel(id: 0, name: 'Select a Campaign');
@@ -787,7 +789,7 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
                     'lastUsedUrl': pageInfo.url,
                     'hasModal': pageInfo.hasModal ? pageInfo.hasModal : false,
                     'pageKey': pageInfo.pageKey,
-                    'modalKey': pageInfo.modalKey,
+                    'modalKey': openedDialog,
                   }
                 ],
               },
@@ -1096,7 +1098,7 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
                     'lastUsedUrl': pageInfo.url,
                     'hasModal': pageInfo.hasModal ? pageInfo.hasModal : false,
                     'pageKey': pageInfo.pageKey,
-                    'modalKey': pageInfo.modalKey,
+                    'modalKey': openedDialog,
                   }
                 ],
               },
@@ -1519,13 +1521,27 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
     super.dispose();
   }
 
+  void onDialogChanged(String dialogKey) {
+    openedDialog = dialogKey;
+    _onNotify();
+  }
+
   void _onNotify() {
-    print('[GoRouter] ${_goRouter.location}');
+    print('[GoRouter] _goRouter.location: ${_goRouter.location}');
+    print('[GoRouter] openedDialog: $openedDialog');
 
     String currentLocation = _goRouter.location;
 
     if (currentLocation.isNotEmpty && projectList.any((element) {
-      return element.lastUsedUrl == currentLocation;
+      return element.lastUsedUrl == currentLocation && (
+        (
+          element.dialogKey == null &&
+          openedDialog == ''
+        ) || (
+          openedDialog != '' &&
+          element.dialogKey == openedDialog
+        )
+      );
     })) {
       final project = projectList.firstWhere((element) {
         return element.lastUsedUrl == currentLocation;
@@ -1560,6 +1576,9 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
   }
 }
 
+class Provider {
+}
+
 class CampaignProjectModel {
   CampaignProjectModel({
     required this.id, 
@@ -1567,7 +1586,8 @@ class CampaignProjectModel {
     this.width = 0.0, 
     this.height = 0.0, 
     this.screenshot = '',
-    this.lastUsedUrl = ''
+    this.lastUsedUrl = '',
+    this.dialogKey = ''
   });
   final int id;
   final String name;
@@ -1575,6 +1595,7 @@ class CampaignProjectModel {
   double height = 0.0;
   String screenshot = '';
   String lastUsedUrl = '';
+  String? dialogKey = '';
 }
 
 String uint8ListToBase64(Uint8List uint8List) {
