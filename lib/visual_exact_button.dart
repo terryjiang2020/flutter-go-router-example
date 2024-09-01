@@ -16,11 +16,11 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:androidrouting/global_key.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:provider/provider.dart';
 
 class VisualExactButton extends StatefulWidget {
   final Widget? child;
@@ -93,6 +93,8 @@ class WidgetStyles {
 }
 
 const vmPrimaryColor = Color(0xff007E60);
+
+bool autoScreenshotFlag = false;
 
 class ApiRes {
   ApiRes({required this.success, this.result = const <CampaignProjectModel>[]});
@@ -557,6 +559,33 @@ PageInfo pageInfo = PageInfo(
     modalKey: null,
 );
 
+resetProjectList() {
+
+    Dio().get(listingUrl,
+    options: options)
+    .then((res) {
+      final results = res.data['result'];
+
+      print('results: $results');
+
+      projectList.clear();
+
+      for (final item in results) {
+        projectList.add(CampaignProjectModel(
+          id: item['id'],
+          name: item['name'],
+          lastUsedUrl: item['lastUsedUrl'],
+          modalKey: item['modalKey'],
+          screenshot: item['screenshot'],
+          width: item['width'].toDouble(),
+          height: item['height'].toDouble(),
+        ));
+      }
+    });
+}
+
+late DialogState dialogState;
+
 class _VisualMatchButtonState extends State<VisualExactButton> {
 
   List<CampaignProjectModel> items = [];
@@ -789,7 +818,7 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
                     'lastUsedUrl': pageInfo.url,
                     'hasModal': pageInfo.hasModal ? pageInfo.hasModal : false,
                     'pageKey': pageInfo.pageKey,
-                    'modalKey': openedDialog,
+                    'modalKey': dialogState.openedDialog,
                   }
                 ],
               },
@@ -1098,7 +1127,7 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
                     'lastUsedUrl': pageInfo.url,
                     'hasModal': pageInfo.hasModal ? pageInfo.hasModal : false,
                     'pageKey': pageInfo.pageKey,
-                    'modalKey': openedDialog,
+                    'modalKey': dialogState.openedDialog,
                   }
                 ],
               },
@@ -1142,7 +1171,8 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
                     status = 0;
                   });
                   widget.setLoading(false);
-                  _goRouter.addListener(_onNotify);
+                  _goRouter.routeInformationProvider.addListener(_onNotify);
+                  resetProjectList();
                 } catch (err) {
                   print('Error: $err');
                 }
@@ -1490,56 +1520,55 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
 
     child = widget.child;
     dialogContext = widget.navigatorKey.currentContext!;
-    Dio().get(listingUrl,
-    options: options)
-    .then((res) {
-      final results = res.data['result'];
-
-      print('results: $results');
-
-      for (final item in results) {
-        projectList.add(CampaignProjectModel(
-          id: item['id'],
-          name: item['name'],
-          lastUsedUrl: item['lastUsedUrl'],
-          screenshot: item['screenshot'],
-          width: item['width'].toDouble(),
-          height: item['height'].toDouble(),
-        ));
-      }
-    });
+    resetProjectList();
 
     _goRouter = GoRouter.of(widget.navigatorKey.currentContext!);
-    _goRouter.addListener(_onNotify);
+    _goRouter.routeInformationProvider.addListener(_onNotify);
+
+    // Obtain the DialogState instance
+    dialogState = Provider.of<DialogState>(context, listen: false);
+    // Add a listener to trigger a function when the value changes
+    dialogState.addListener(_onNotify);
   }
 
   @override
   void dispose() {
-    _goRouter.removeListener(_onNotify);
+    _goRouter.routeInformationProvider.removeListener(_onNotify);
     _goRouter.dispose();
+    dialogState.removeListener(_onNotify);
     projectList.clear();
     super.dispose();
   }
 
-  void onDialogChanged(String dialogKey) {
-    openedDialog = dialogKey;
-    _onNotify();
-  }
-
   void _onNotify() {
-    print('[GoRouter] _goRouter.location: ${_goRouter.location}');
-    print('[GoRouter] openedDialog: $openedDialog');
+    if (autoScreenshotFlag) {
+      return;
+    }
 
-    String currentLocation = _goRouter.location;
+    final location = _goRouter.routerDelegate.currentConfiguration.uri.toString();
+
+    print('[GoRouter] _goRouter.location: $location');
+    print('[GoRouter] dialogState.openedDialog: $dialogState.openedDialog');
+    print('[GoRouter] projectList.length: ${projectList.length}');
+    projectList.map((CampaignProjectModel project) => {
+      print('Project: $project')
+    });
+
+    for (final project in projectList) {
+      print('project.lastUsedUrl: ${project.lastUsedUrl}');
+      print('project.modalKey: ${project.modalKey}');
+    }
+
+    String currentLocation = location;
 
     if (currentLocation.isNotEmpty && projectList.any((element) {
       return element.lastUsedUrl == currentLocation && (
         (
-          element.dialogKey == null &&
-          openedDialog == ''
+          element.modalKey == null &&
+          dialogState.openedDialog == ''
         ) || (
-          openedDialog != '' &&
-          element.dialogKey == openedDialog
+          dialogState.openedDialog != '' &&
+          element.modalKey == dialogState.openedDialog
         )
       );
     })) {
@@ -1549,7 +1578,7 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
 
       print('Project found: $project');
 
-      _goRouter.removeListener(_onNotify);
+      _goRouter.routeInformationProvider.removeListener(_onNotify);
 
       pressHandler(child, widget.currentContext, project);
     }
@@ -1576,9 +1605,6 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
   }
 }
 
-class Provider {
-}
-
 class CampaignProjectModel {
   CampaignProjectModel({
     required this.id, 
@@ -1587,7 +1613,7 @@ class CampaignProjectModel {
     this.height = 0.0, 
     this.screenshot = '',
     this.lastUsedUrl = '',
-    this.dialogKey = ''
+    this.modalKey = ''
   });
   final int id;
   final String name;
@@ -1595,7 +1621,7 @@ class CampaignProjectModel {
   double height = 0.0;
   String screenshot = '';
   String lastUsedUrl = '';
-  String? dialogKey = '';
+  String? modalKey = '';
 }
 
 String uint8ListToBase64(Uint8List uint8List) {
@@ -1652,7 +1678,7 @@ class PageInfo {
 PageInfo getPageInfo(BuildContext context, GlobalKey navigatorKey) {
   // Retrieve the current URL from the route settings
   final routerContext = navigatorKey.currentContext;
-  final currentRoute = GoRouter.of(routerContext!).location;
+  final currentRoute = GoRouter.of(routerContext!).routerDelegate.currentConfiguration.uri.toString();
   final url3 = currentRoute.toString();
   // Success!
   print('url3: $url3');
@@ -1685,4 +1711,22 @@ GlobalKey? _findGlobalKeyForWidget(BuildContext context) {
     return null;
   }
   return null;
+}
+
+// String openedDialog = '';
+
+class DialogState extends ChangeNotifier {
+  String _openedDialog = '';
+
+  String get openedDialog => _openedDialog;
+
+  void openDialog(String modalKey) {
+    _openedDialog = modalKey;
+    notifyListeners();
+  }
+
+  void closeDialog() {
+    _openedDialog = '';
+    notifyListeners();
+  }
 }

@@ -3,9 +3,17 @@ import 'package:androidrouting/visual_exact_button.dart';
 import 'package:flutter/material.dart';
 import 'package:screenshot/screenshot.dart';
 import 'app/routes/app_routes.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  // runApp(const MyApp()); 
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => DialogState(),
+      child: MyApp(),
+    ),
+  );
 }
 
 final ScreenshotController screenshotController = ScreenshotController();

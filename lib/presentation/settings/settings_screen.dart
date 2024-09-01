@@ -1,6 +1,7 @@
+import 'package:androidrouting/visual_exact_button.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import '../../global_key.dart';
-
 
 class SettingScreen extends StatelessWidget {
   const SettingScreen({Key? key}) : super(key: key);
@@ -30,7 +31,6 @@ class SettingScreen extends StatelessWidget {
   }
 }
 
-
 class Dialogs extends StatefulWidget {
   const Dialogs({super.key});
 
@@ -40,7 +40,7 @@ class Dialogs extends StatefulWidget {
 
 class _DialogsState extends State<Dialogs> {
   void openDialog(BuildContext context) {
-    openedDialog = 'dialog';
+    dialogState.openDialog('dialog');
 
     showDialog<void>(
       context: context,
@@ -67,7 +67,7 @@ class _DialogsState extends State<Dialogs> {
           print('didPop: $didPop');
           if (didPop) {
             print('Dialog was dismissed');
-            openedDialog = '';
+            dialogState.closeDialog();
           }
         },
       )
@@ -75,7 +75,7 @@ class _DialogsState extends State<Dialogs> {
   }
 
   void openFullscreenDialog(BuildContext context) {
-    openedDialog = 'fullscreenDialog';
+    dialogState.openDialog('fullscreenDialog');
     showDialog<void>(
       context: context,
       builder: (context) => 
@@ -108,7 +108,7 @@ class _DialogsState extends State<Dialogs> {
           print('didPop: $didPop');
           if (didPop) {
             print('Dialog was dismissed');
-            openedDialog = '';
+            dialogState.closeDialog();
           }
         },
       )
