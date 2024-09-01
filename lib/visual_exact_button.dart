@@ -22,21 +22,27 @@ import 'package:go_router/go_router.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:provider/provider.dart';
 
+class Awesome {
+  bool get isAwesome => true;
+}
+
 class VisualExactButton extends StatefulWidget {
   final Widget? child;
   final Function setLoading;
   final BuildContext currentContext;
-  final GlobalKey<NavigatorState> navigatorKey;
   final ScreenshotController screenshotController;
+  final GlobalKey<NavigatorState> navigatorKey;
+  final String apiToken;
 
   const VisualExactButton({
-    Key? key,
+    super.key,
     required this.child,
     required this.setLoading,
     required this.currentContext,
+    required this.screenshotController,
     required this.navigatorKey,
-    required this.screenshotController
-  }) : super(key: key);
+    required this.apiToken
+  });
 
   @override
   State<VisualExactButton> createState() => _VisualMatchButtonState();
@@ -101,14 +107,6 @@ class ApiRes {
   final bool success;
   final List<CampaignProjectModel> result;
 }
-
-const apiToken = '67fd3d00-2439-11ef-bef2-dbb7af0bf2601717701444816'; // Use a valid API Token here
-
-final options = Options(
-  headers: {
-    'api-token': apiToken,
-  }
-);
 
 const uploadUrl = 'https://testserver.visualexact.com/api/designcomp/extension/screenshot/base64';
 
@@ -557,6 +555,10 @@ PageInfo pageInfo = PageInfo(
     pageKey: null,
     hasModal: false,
     modalKey: null,
+);
+
+Options options = Options(
+  headers: {}
 );
 
 resetProjectList() {
@@ -1269,6 +1271,30 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
                         width: double.infinity,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Auto scan pages'),
+                              Switch(
+                                // This bool value toggles the switch.
+                                value: autoScreenshotFlag,
+                                activeColor: vmPrimaryColor,
+                                onChanged: (bool value) {
+                                  // This is called when the user toggles the switch.
+                                  setState(() {
+                                    autoScreenshotFlag = value;
+                                  });
+                                  // autoScreenshotFlag = value;
+                                },
+                              ),
+                            ],
+                          )
+                        ),
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 15.0),
                           child: new Theme(
                             data: Theme.of(context).copyWith(
                               canvasColor: Colors.white,
@@ -1518,11 +1544,18 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
 
     print('initState is triggered');
 
+    options = Options(
+      headers: {
+        'api-token': widget.apiToken,
+      }
+    );
+
     child = widget.child;
     dialogContext = widget.navigatorKey.currentContext!;
     resetProjectList();
 
     _goRouter = GoRouter.of(widget.navigatorKey.currentContext!);
+    // _goRouter.addListener(_onNotify);
     _goRouter.routeInformationProvider.addListener(_onNotify);
 
     // Obtain the DialogState instance
@@ -1541,14 +1574,14 @@ class _VisualMatchButtonState extends State<VisualExactButton> {
   }
 
   void _onNotify() {
-    if (autoScreenshotFlag) {
+    if (!autoScreenshotFlag) {
       return;
     }
 
     final location = _goRouter.routerDelegate.currentConfiguration.uri.toString();
 
-    print('[GoRouter] _goRouter.location: $location');
-    print('[GoRouter] dialogState.openedDialog: $dialogState.openedDialog');
+    print('[GoRouter] location: $location');
+    print('[GoRouter] dialogState.openedDialog: ${dialogState.openedDialog}');
     print('[GoRouter] projectList.length: ${projectList.length}');
     projectList.map((CampaignProjectModel project) => {
       print('Project: $project')

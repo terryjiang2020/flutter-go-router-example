@@ -63,6 +63,7 @@ class MyApp extends StatelessWidget {
             setLoading: (bool value) {
               loading = value;
             },
+            apiToken: '67fd3d00-2439-11ef-bef2-dbb7af0bf2601717701444816', // Use a valid API Token here
             currentContext: context,
             navigatorKey: navigatorKey,
             screenshotController: screenshotController,
