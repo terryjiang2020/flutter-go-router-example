@@ -100,21 +100,24 @@ void processDartFile(File file) {
       final parentFunctionStart = findParentFunctionStart(lines, i);
       final parentFunctionEnd = findParentFunctionEnd(lines, i);
 
-      if (!containsDialogOpen(lines, parentFunctionStart, parentFunctionEnd)) {
-        final uniqueDialogName = generateDialogName();
-        lines.insert(i, "dialogState.openDialog('$uniqueDialogName');");
-        modified = true;
-        i++; // Skip the newly inserted line to avoid processing it again
-      }
+      if (parentFunctionStart != 0) {
+        if (!containsDialogOpen(lines, parentFunctionStart, parentFunctionEnd)) {
+          final uniqueDialogName = generateDialogName();
+          lines.insert(i, "dialogState.openDialog('$uniqueDialogName');");
+          modified = true;
+          i++; // Skip the newly inserted line to avoid processing it again
+        }
 
-      if (!containsPopScope(lines, parentFunctionStart, parentFunctionEnd)) {
-        // Wrap the showDialog in PopScope with the onPopInvoked function
-        wrapWithPopScope(lines, i);
-      }
-      else {
-        print('PopScope already exists');
-        print('parentFunctionStart: $parentFunctionStart');
-        print('parentFunctionEnd: $parentFunctionEnd');
+        if (!containsPopScope(lines, parentFunctionStart, parentFunctionEnd)) {
+          // Wrap the showDialog in PopScope with the onPopInvoked function
+          wrapWithPopScope(lines, i);
+        }
+        else {
+          print('PopScope already exists');
+          print('parentFunctionStart: $parentFunctionStart');
+          print('parentFunctionEnd: $parentFunctionEnd');
+          print('i: $i');
+        }
       }
     }
   }
@@ -127,38 +130,24 @@ void processDartFile(File file) {
 
 int findParentFunctionStart(List<String> lines, int startIndex) {
   // Reverse search to find the line where the function begins
-  int openParenthesisCount = 0;
-  int closeParenthesisCount = 0;
+  // int openParenthesisCount = 0;
+  // int closeParenthesisCount = 0;
   int braceCount = 0;
 
   for (int i = startIndex; i >= 0; i--) {
     String line = lines[i];
-
-    // Count the open and close parentheses
-    openParenthesisCount += RegExp(r'\(').allMatches(line).length;
-    closeParenthesisCount += RegExp(r'\)').allMatches(line).length;
-
-    // If we are at the function signature line, it should have balanced parentheses
-    if (openParenthesisCount > 0 && openParenthesisCount == closeParenthesisCount) {
-      // Ensure the line has a function name and an opening brace `{`
-      if (RegExp(r'^[a-zA-Z0-9_]+\s*\(').hasMatch(line)) {
-        braceCount += RegExp(r'\{').allMatches(line).length;
-        if (braceCount == 0) {
-          // We found the function start
-          return i;
-        }
-      }
-    }
 
     // Look if this line is part of a function body
     braceCount += RegExp(r'\{').allMatches(line).length;
     braceCount -= RegExp(r'\}').allMatches(line).length;
 
     // If we've passed the function body without finding a function signature, we return this line
-    if (braceCount < 0) {
+    if (braceCount > 0) {
       return i + 1;
     }
   }
+
+  print('Function start not found for line $startIndex');
 
   return 0; // Default to the start of the file if no function start is found
 }
@@ -174,6 +163,7 @@ int findParentFunctionEnd(List<String> lines, int startIndex) {
     if (openBraces == 0) return i;
   }
 
+  print('Function end not found for line $startIndex');
   return lines.length - 1;
 }
 
