@@ -1,7 +1,5 @@
 import 'package:androidrouting/visual_exact_button.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import '../../global_key.dart';
 
 class SettingScreen extends StatelessWidget {
   const SettingScreen({Key? key}) : super(key: key);
