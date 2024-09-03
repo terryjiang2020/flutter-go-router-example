@@ -1,9 +1,20 @@
 import 'dart:io';
+import 'dart:math';
 
 // TODO: Change this to the flutter package name later on.
 const String importStatement = "import 'package:androidrouting/visual_exact_button.dart';";
 const String openDialog = "showDialog<void>";
 const String importTest = 'package:flutter_test/flutter_test.dart';
+const popScopeTemplate = """
+PopScope(
+  onPopInvoked: (didPop) {
+    if (didPop) {
+      dialogState.closeDialog();
+      print('Dialog was dismissed');
+    }
+  },
+  child: 
+""";
 
 void main() {
   // Find all Dart files in the current directory and subdirectories
@@ -83,6 +94,31 @@ void processDartFile(File file) {
     }
   }
 
+  // Find and process each showDialog function
+  for (int i = 0; i < lines.length; i++) {
+    if (lines[i].contains('showDialog(') || lines[i].contains('showDialog<void>')) {
+      final parentFunctionStart = findParentFunctionStart(lines, i);
+      final parentFunctionEnd = findParentFunctionEnd(lines, i);
+
+      if (!containsDialogOpen(lines, parentFunctionStart, parentFunctionEnd)) {
+        final uniqueDialogName = generateDialogName();
+        lines.insert(i, "dialogState.openDialog('$uniqueDialogName');");
+        modified = true;
+        i++; // Skip the newly inserted line to avoid processing it again
+      }
+
+      if (!containsPopScope(lines, parentFunctionStart, parentFunctionEnd)) {
+        // Wrap the showDialog in PopScope with the onPopInvoked function
+        wrapWithPopScope(lines, i);
+      }
+      else {
+        print('PopScope already exists');
+        print('parentFunctionStart: $parentFunctionStart');
+        print('parentFunctionEnd: $parentFunctionEnd');
+      }
+    }
+  }
+
   if (modified) {
     file.writeAsStringSync(lines.join('\n'));
     print('Modified ${file.path}');
@@ -145,6 +181,84 @@ bool containsDialogOpen(List<String> lines, int start, int end) {
   return lines.sublist(start, end + 1).any((line) => line.contains('dialogState.openDialog('));
 }
 
+bool containsPopScope(List<String> lines, int start, int end) {
+  return lines.sublist(start, end + 1).any((line) => line.contains('PopScope('));
+}
+
+bool containsPopInvoked(List<String> lines, int start, int end) {
+  return lines.sublist(start, end + 1).any((line) => line.contains('onPopInvoked:'));
+}
+
 String generateDialogName() {
-  return 'dialog_${DateTime.now().millisecondsSinceEpoch}';
+  var random = Random();
+  int randomNumber = random.nextInt(1000000); // Generate a random number
+  return 'dialog_${DateTime.now().millisecondsSinceEpoch}_$randomNumber';
+}
+
+void wrapWithPopScope(List<String> lines, int showDialogIndex) {
+  int builderIndex = findBuilderIndex(lines, showDialogIndex);
+
+  if (builderIndex != -1) {
+    lines.insert(builderIndex + 1, popScopeTemplate); // Insert PopScope and onPopInvoked
+    int closeBracketIndex = findMatchingBracket(lines, builderIndex + 1);
+    lines[closeBracketIndex] = removeLastSemicolon(lines[closeBracketIndex]);
+    lines.insert(closeBracketIndex + 1, ');'); // Close PopScope after the dialog content
+  } else {
+    print('Builder not found for showDialog at index $showDialogIndex');
+  }
+}
+
+int findBuilderIndex(List<String> lines, int startIndex) {
+  for (int i = startIndex; i < lines.length; i++) {
+    if (lines[i].contains('builder:')) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int findMatchingBracket(List<String> lines, int startIndex) {
+  int openBrackets = 0;
+  bool started = false;
+  // print('lines: $lines');
+
+  print('startIndex: $startIndex');
+  print('lines.length: ${lines.length}');
+  
+  for (int i = startIndex; i < lines.length; i++) {
+    // print('line: ${lines[i]}');
+    if (!lines[i].contains('//')) {
+      if (lines[i].contains('(')) {
+        // openBrackets += RegExp(r'\(').allMatches(lines[i]).length;
+        int allMatchesLeft = RegExp(r'\(').allMatches(lines[i]).length;
+        print('allMatchesLeft: $allMatchesLeft');
+        openBrackets += allMatchesLeft;
+        started = true;
+      }
+      if (lines[i].contains(')')) {
+        // openBrackets -= RegExp(r'\)').allMatches(lines[i]).length;
+        int allMatchesRight = RegExp(r'\)').allMatches(lines[i]).length;
+        print('allMatchesRight: $allMatchesRight');
+        openBrackets -= allMatchesRight;
+      }
+      if (openBrackets == 0 && started) {
+        print('line: ${lines[i]}');
+        return i;
+      }
+    }
+    print('i: $i');
+  }
+  return -1;
+}
+
+String removeLastSemicolon(String line) {
+  int lastSemicolonIndex = line.lastIndexOf(';');
+  
+  if (lastSemicolonIndex == -1) {
+    // No semicolon found; return the original line
+    return line;
+  }
+  
+  // Remove the semicolon by taking substrings before and after it
+  return line.substring(0, lastSemicolonIndex) + line.substring(lastSemicolonIndex + 1);
 }
