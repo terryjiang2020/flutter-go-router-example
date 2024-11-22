@@ -83,7 +83,7 @@ void processDartFile(File file) {
       final onPopEnd = findParentFunctionEnd(lines, i);
 
       for (int j = onPopStart; j < onPopEnd; j++) {
-        if (lines[j].contains('didPop == true') || lines[j].contains('if (didPop')) {
+        if (lines[j].contains('didPop == true') || lines[j].contains('if (didPop') || lines[j].contains('didPop) {')) {
           if (!lines.sublist(j, onPopEnd).any((line) => line.contains('dialogState.closeDialog('))) {
             lines.insert(j + 1, "dialogState.closeDialog();");
             modified = true;

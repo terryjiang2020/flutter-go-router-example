@@ -1,4 +1,3 @@
-import 'package:androidrouting/visual_exact_button.dart';
 import 'package:flutter/material.dart';
 
 class SettingScreen extends StatelessWidget {
@@ -38,19 +37,9 @@ class Dialogs extends StatefulWidget {
 
 class _DialogsState extends State<Dialogs> {
   void openDialog(BuildContext context) {
-dialogState.openDialog('dialog_1725435328082_908003');
     showDialog<void>(
       context: context,
       builder: (context) => 
-PopScope(
-  onPopInvoked: (didPop) {
-    if (didPop) {
-      dialogState.closeDialog();
-      print('Dialog was dismissed');
-    }
-  },
-  child: 
-
       AlertDialog(
           key: GlobalKey(debugLabel: 'dialog'),
           title: const Text('What is a dialog?'),
@@ -67,24 +56,13 @@ PopScope(
             ),
           ],
         )
-    )
-);
+    );
   }
 
   void openFullscreenDialog(BuildContext context) {
-dialogState.openDialog('dialog_1725435328082_664678');
     showDialog<void>(
       context: context,
       builder: (context) => 
-PopScope(
-  onPopInvoked: (didPop) {
-    if (didPop) {
-      dialogState.closeDialog();
-      print('Dialog was dismissed');
-    }
-  },
-  child: 
-
       Dialog.fullscreen(
           key: GlobalKey(debugLabel: 'fullscreenDialog'),
           child: Padding(
@@ -107,8 +85,7 @@ PopScope(
             ),
           ),
         ),
-    )
-);
+    );
   }
 
   @override

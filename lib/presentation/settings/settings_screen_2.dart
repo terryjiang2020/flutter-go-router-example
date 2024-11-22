@@ -38,18 +38,10 @@ class Dialogs extends StatefulWidget {
 
 class _DialogsState extends State<Dialogs> {
   void openDialog(BuildContext context) {
-dialogState.openDialog('dialog_1725435328082_908003');
+dialogState.openDialog('dialog_1725435328086_605638');
     showDialog<void>(
       context: context,
       builder: (context) => 
-PopScope(
-  onPopInvoked: (didPop) {
-    if (didPop) {
-      dialogState.closeDialog();
-      print('Dialog was dismissed');
-    }
-  },
-  child: 
 
       AlertDialog(
           key: GlobalKey(debugLabel: 'dialog'),
@@ -66,25 +58,15 @@ PopScope(
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
-        )
     )
 );
   }
 
   void openFullscreenDialog(BuildContext context) {
-dialogState.openDialog('dialog_1725435328082_664678');
+dialogState.openDialog('dialog_1725435328086_46426');
     showDialog<void>(
       context: context,
       builder: (context) => 
-PopScope(
-  onPopInvoked: (didPop) {
-    if (didPop) {
-      dialogState.closeDialog();
-      print('Dialog was dismissed');
-    }
-  },
-  child: 
-
       Dialog.fullscreen(
           key: GlobalKey(debugLabel: 'fullscreenDialog'),
           child: Padding(
@@ -107,8 +89,7 @@ PopScope(
             ),
           ),
         ),
-    )
-);
+    );
   }
 
   @override
